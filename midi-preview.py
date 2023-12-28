@@ -12,6 +12,7 @@ BUFFER_SIZE = 128
 argParser = argparse.ArgumentParser()
 argParser.add_argument("-m", "--midi", help="Path to your midi files")
 argParser.add_argument("-p", "--plugin", help="Path to VST/VST3/AU plugin")
+argParser.add_argument("-s", "--seconds", help="WAV file length that gets rendered (default: 10)", default=10, required=False, type=int)
 
 args = argParser.parse_args()
 
@@ -35,7 +36,7 @@ bar = tqdm(midi_files)
 for midi_file in bar:
 	plugin.load_midi(midi_file, clear_previous=True, beats=False, all_events=True)
 
-	engine.render(5) 
+	engine.render(args.seconds) 
 	audio = engine.get_audio()
 
 	filename = os.path.splitext(midi_file)[0] + ".wav"
