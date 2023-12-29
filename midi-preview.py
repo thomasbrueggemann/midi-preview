@@ -1,10 +1,8 @@
 import argparse
 import os
 import dawdreamer as daw
-from scipy.io import wavfile
-from playsound import playsound
-import os
 from tqdm import tqdm
+from scipy.io import wavfile
 
 SAMPLE_RATE = 44100
 BUFFER_SIZE = 128
@@ -12,12 +10,20 @@ BUFFER_SIZE = 128
 argParser = argparse.ArgumentParser()
 argParser.add_argument("-m", "--midi", help="Path to your midi files")
 argParser.add_argument("-p", "--plugin", help="Path to VST/VST3/AU plugin")
-argParser.add_argument("-s", "--seconds", help="WAV file length that gets rendered (default: 10)", default=10, required=False, type=int)
+argParser.add_argument("-s", "--seconds", help="Rendered audio file length (default: 8)", default=8, required=False, type=int)
+argParser.add_argument("-o", "--open", help="Should the plugin window be opened to make adjustments?", action="store_true")
 
 args = argParser.parse_args()
 
 engine = daw.RenderEngine(SAMPLE_RATE, BUFFER_SIZE)
 plugin = engine.make_plugin_processor("midi-preview", args.plugin)
+
+print('inputs:', plugin.get_num_input_channels())
+print('outputs:', plugin.get_num_output_channels())
+
+if args.open:
+	plugin.open_editor()
+
 engine.load_graph([(plugin, [])])
 
 midi_files = []
@@ -38,7 +44,10 @@ for midi_file in bar:
 
 	engine.render(args.seconds) 
 	audio = engine.get_audio()
+	mono_audio = audio.transpose()[:, :1]
 
 	filename = os.path.splitext(midi_file)[0] + ".wav"
 	bar.set_postfix_str(filename)
-	wavfile.write(filename, SAMPLE_RATE, audio.transpose())
+
+	wavfile.write(filename, SAMPLE_RATE, mono_audio)
+	
